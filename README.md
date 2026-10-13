@@ -1,24 +1,24 @@
-# AMS 1.12.0 — Quest/Kiosk Invert Fix
+# AMS 1.12.0 - Quest/Kiosk Invert Fix
 
-Este fix nació durante la recuperación de una Nintendo Switch de fábrica que, tras actualizarse por el método oficial de Nintendo, dejó de arrancar por completo. Al quedar fuera de garantía, la única vía viable fue instalar un modchip (HWFLY/Picofly). Tras instalar el modchip, restaurar una copia completa de la NAND y probar tanto en Stock (OFW) como en emuMMC (Atmosphère), la consola seguía sin arrancar. El análisis de los informes Erpt y del comportamiento de arranque reveló que se trataba de una unidad **demo/kiosk** con el fusible "Quest" quemado y la aplicación RDIM (`0100069000078000`, Retail Interactive Display Menu) ausente, probablemente por un formateo/reseteo de fábrica.
+This fix was developed while recovering a factory-original Nintendo Switch that stopped booting entirely after being updated through Nintendo official update method. Since the console was already out of factory warranty, the only viable recovery option was to install a modchip (HWFLY/Picofly).
 
-El único parche funcional, seguro y totalmente reversible (sin modificar la sysNAND original) fue invertir el flag Quest en Exosphère usando el build `quest-invert` de ZachyCatGames para Atmosphère 1.12.0. Gracias a ello, `qlaunch` volvió a arrancar con normalidad y el emuNAND quedó plenamente funcional.
+After installing the modchip, restoring a full NAND backup, and testing both sysNAND and emuMMC, the console still failed to boot — neither in Stock (OFW) nor in emuMMC (Atmosphère). A detailed analysis of Erpt reports and boot behavior revealed that the console was a demo/kiosk unit with the Quest fuse burnt and the RDIM (0100069000078000, Retail Interactive Display Menu) missing, likely due to a factory reset/format. The only functional, safe, and fully reversible solution (without modifying the original sysNAND) was to invert the Quest flag in Exosphère using ZachyCatGames quest-invert build for Atmosphère 1.12.0. This allowed qlaunch to boot normally and restored full emuNAND functionality.
 
-Este repositorio proporciona un `atmosphere/package3` parcheado que resuelve el problema de forma segura y reversible.
+This repository provides a patched atmosphere/package3 that resolves this issue safely and reversibly.
 
-## Causa raíz
+## Root Cause
 
-Las unidades demo/kiosk (de exposición en tiendas) tienen un fusible extra quemado (el fusible "Quest"). Exosphère lo lee y activa el flag Quest. Con ese flag activo, `qlaunch` (el HOME Menu) intenta lanzar automáticamente el título `0100069000078000` (Retail Interactive Display Menu / RDIM).
+Demo/kiosk (store display) Switch units have an extra fuse burnt (the "Quest" fuse). Exosphère reads this fuse and sets the Quest flag. When this flag is active, `qlaunch` (the HOME Menu) automatically attempts to launch title `0100069000078000` (the Retail Interactive Display Menu / RDIM).
 
-Si esa aplicación demo falta (habitualmente tras un reseteo/formateo de fábrica), el lanzamiento falla y el sistema muestra `2162-0004` ("Could not start the software") justo después de los logos de Nintendo, con `FocusedAppletHistory` vacío.
+If that demo application is missing (commonly after a factory reset/format, or as a side effect of certain updates on kiosk units), the launch fails and HOS shows `2162-0004` ("Could not start the software") immediately after the Nintendo logos, with `FocusedAppletHistory` empty.
 
-Esto ocurre tanto en **sysNAND** como en **emuMMC**, porque el flag lo determina Exosphère en el arranque (según la interpretación del fusible).
+This happens on both sysNAND and emuMMC, because the flag is determined by Exosphère at boot (based on the fuse interpretation).
 
-## Solución
+## Solution
 
-Este repositorio incluye un `atmosphere/package3` parcheado para **Atmosphère 1.12.0** con el flag Quest/Kiosk invertido (`quest-invert`). Así las unidades kiosk/demo se comportan como retail: `qlaunch` ya no intenta auto-lanzar el RDIM y arranca directamente en el HOME Menu.
+This repository provides a patched `atmosphere/package3` for **Atmosphère 1.12.0** with the Quest/Kiosk flag inverted (`quest-invert`). This makes kiosk/demo units behave like retail units, so `qlaunch` no longer tries to auto-launch the RDIM and boots directly into the HOME Menu.
 
-El cambio a nivel de código (del fork de ZachyCatGames):
+The source-level change (from ZachyCatGames' fork):
 
 ```cpp
 // libraries/libexosphere/source/fuse/fuse_api.cpp
@@ -27,40 +27,39 @@ RetailInteractiveDisplayState GetRetailInteractiveDisplayState() {
 }
 ```
 
-## Contenido
+## What's Included
 
-- `atmosphere/package3` — Exosphère parcheado (quest-invert) para AMS 1.12.0
-- `package3.sha256` — Hash SHA256 para verificar la integridad
-- `LICENSE` — GPLv2 (licencia de Atmosphère)
-- `README.md` — Versión en español
-- `README_EN.md` — Versión en inglés
+- `atmosphere/package3` – Patched Exosphère (quest-invert) for AMS 1.12.0
+- `package3.sha256` – SHA256 checksum for integrity verification
+- `LICENSE` – GPLv2 (Atmosphère license)
+- `README.md` – Documentation (English)
 
-## Cómo aplicar
+## How to Apply
 
-1. **Haz una copia de seguridad** de tu `atmosphere/package3` original de la SD (es totalmente reversible).
-2. Copia el `atmosphere/package3` de este repo a `atmosphere/package3` de tu SD (reemplázalo).
-3. Asegúrate de que existe `atmosphere/contents/420000000000000B` (reactiva sys-patch si estaba renombrado como `420000000000000B_DISABLED`).
-4. Arranca con Hekate → `[Atmosphere (EMUMMC)]` (o inyecta `fusee.bin`). Deberías llegar a la configuración inicial ("Bienvenido" / "Configurar como consola nueva") o al HOME Menu.
-5. Para **revertir**, restaura tu copia de seguridad del `package3` original.
+1. **Back up** your original `atmosphere/package3` from your SD card (this is fully reversible).
+2. Copy `atmosphere/package3` from this repo to `atmosphere/package3` on your SD card (replace it).
+3. Ensure `atmosphere/contents/420000000000000B` exists (reactivate sys-patch if it was renamed to `420000000000000B_DISABLED`).
+4. Boot via Hekate → `[Atmosphere (EMUMMC)]` (or inject `fusee.bin`). You should boot into the initial setup ("Welcome" / "Set up as new console") or the HOME Menu.
+5. To **revert**, restore your original `package3` backup.
 
-## Verificado en
+## Verified On
 
-- Consola: Nintendo Switch V2 (Mariko) con modchip HWFLY/Picofly
+- Console: Nintendo Switch V2 (Mariko) with HWFLY/Picofly modchip
 - Firmware: 23.0.1
 - CFW: Atmosphère 1.12.0
 - Bootloader: Hekate 6.5.4
-- Resultado: arranca hasta "Configurar como consola nueva" (el HOME Menu lanza correctamente)
+- Result: Boots to "Set up as new console" (HOME Menu launches correctly)
 
-## Créditos
+## Credits
 
-- [ZachyCatGames/Atmosphere](https://github.com/ZachyCatGames/Atmosphere) — release [1.12.0-quest-invert](https://github.com/ZachyCatGames/Atmosphere/releases/tag/1.12.0-quest-invert)
-- [Atmosphere-NX/Atmosphere](https://github.com/Atmosphere-NX/Atmosphere) — Atmosphère base
+- [ZachyCatGames/Atmosphere](https://github.com/ZachyCatGames/Atmosphere) – [1.12.0-quest-invert](https://github.com/ZachyCatGames/Atmosphere/releases/tag/1.12.0-quest-invert) release
+- [Atmosphere-NX/Atmosphere](https://github.com/Atmosphere-NX/Atmosphere) – Base Atmosphère
 
-## Licencia
+## License
 
-Este repositorio sigue la licencia **GPLv2** de Atmosphère. Ver [LICENSE](LICENSE).
+This repository follows the GPLv2 license of Atmosphère. See [LICENSE](LICENSE).
 
-## Verificación
+## Verification
 
 ```text
 SHA256: b26c297c77755041d87871d7614b13bd16ec8c946b524cc64107af5efcce3fde *atmosphere/package3
