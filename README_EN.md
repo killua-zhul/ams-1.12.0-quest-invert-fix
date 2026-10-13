@@ -1,8 +1,10 @@
 # AMS 1.12.0 - Quest/Kiosk Invert Fix
 
-This fix was developed after a factory-original Nintendo Switch was updated through Nintendo's official update method and stopped booting entirely afterwards. Since the console was already out of factory warranty, the only viable recovery path was installing a modchip. After the modchip was installed and a full NAND backup was restored, the console still failed to boot — neither in Stock (OFW) nor in emuMMC (Atmosphère). The root cause was traced to the console being a demo/kiosk unit whose missing RDIM (Retail Interactive Display Menu) data caused qlaunch to fail with error `2162-0004` right after the boot logos.
+This fix was developed while recovering a factory-original Nintendo Switch that stopped booting entirely after being updated through Nintendo official update method. Since the console was already out of factory warranty, the only viable recovery option was to install a modchip (HWFLY/Picofly).
 
-This repository provides a patched `atmosphere/package3` that resolves this issue safely and reversibly.
+After installing the modchip, restoring a full NAND backup, and testing both sysNAND and emuMMC, the console still failed to boot — neither in Stock (OFW) nor in emuMMC (Atmosphère). A detailed analysis of Erpt reports and boot behavior revealed that the console was a demo/kiosk unit with the Quest fuse burnt and the RDIM (0100069000078000, Retail Interactive Display Menu) missing, likely due to a factory reset/format. The only functional, safe, and fully reversible solution (without modifying the original sysNAND) was to invert the Quest flag in Exosphère using ZachyCatGames quest-invert build for Atmosphère 1.12.0. This allowed qlaunch to boot normally and restored full emuNAND functionality.
+
+This repository provides a patched atmosphere/package3 that resolves this issue safely and reversibly.
 
 ## Root Cause
 
